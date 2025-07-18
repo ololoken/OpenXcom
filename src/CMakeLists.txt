@@ -454,8 +454,13 @@ set ( cxx_src
 
 set ( c_src
   ../libs/miniz/miniz.c
+  ../libs/SDL_gfx/SDL_gfxPrimitives.c
+  ../libs/SDL_gfx/SDL_gfxBlitFunc.c
 )
 set_property ( SOURCE ${c_src} APPEND PROPERTY COMPILE_DEFINITIONS MINIZ_NO_STDIO )
+
+set_property ( SOURCE ${c_src} APPEND PROPERTY COMPILE_FLAGS --use-port=sdl2\ )
+
 set_property ( SOURCE Engine/Scalers/xbrz.cpp APPEND_STRING PROPERTY COMPILE_FLAGS -Wno-unused\ )
 
 set ( data_install_dir bin )
@@ -623,6 +628,24 @@ if (WIN32)
   set(CMAKE_EXE_LINKER_FLAGS -Wl,--export-all-symbols)
   set(WIN32_LIBS imagehlp dbghelp)
 endif(WIN32)
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
+  set(USE_FLAGS "--use-port=sdl2 \
+  --use-port=sdl2_image:formats=png,jpg,pcx,lbm --use-port=libpng --use-port=libjpeg \
+  --use-port=sdl2_mixer -sSDL2_MIXER_FORMATS=ogg,mp3,mod,mid \
+  -sNO_DISABLE_EXCEPTION_CATCHING")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${USE_FLAGS}")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${USE_FLAGS} \
+  --preload-file ${CMAKE_SOURCE_DIR}/timidity/@/etc/ \
+  -sASYNCIFY -sASYNCIFY_STACK_SIZE=32768 \
+  -sALLOW_MEMORY_GROWTH -sINITIAL_MEMORY=128mb \
+  -sEXPORT_ALL -sEXPORTED_RUNTIME_METHODS=callMain,addRunDependency,removeRunDependency \
+  -sEXIT_RUNTIME \
+  -lidbfs.js \
+  -O3 \
+  -sENVIRONMENT=web -sMODULARIZE")
+  add_definitions(-D__NO_OPENGL)
+endif ()
 
 target_link_libraries ( openxcom ${system_libs} ${PKG_DEPS_LDFLAGS} ${WIN32_LIBS} )
 

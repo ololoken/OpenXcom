@@ -114,7 +114,7 @@ ModListState::ModListState() : _curMasterIdx(0)
 			++_curMasterIdx;
 		}
 		_masters.push_back(modInfo);
-		masterNames.push_back(modInfo->getName());
+		masterNames.push_back(tr(modInfo->getName()));
 	}
 
 	_cbxMasters->setOptions(masterNames);
@@ -167,7 +167,7 @@ ModListState::~ModListState()
 
 std::string ModListState::makeTooltip(const ModInfo &modInfo)
 {
-	return tr("STR_MODS_TOOLTIP").arg(modInfo.getVersionDisplay()).arg(modInfo.getAuthor()).arg(modInfo.getDescription());
+	return tr("STR_MODS_TOOLTIP").arg(modInfo.getVersionDisplay()).arg(tr(modInfo.getAuthor())).arg(tr(modInfo.getDescription()));
 }
 
 void ModListState::cbxMasterHover(Action *)
@@ -234,7 +234,7 @@ void ModListState::lstModsRefresh(size_t scrollLoc)
 		}
 
 		std::string modName = modInfo.getName();
-		_lstMods->addRow(3, modName.c_str(), "", (pair.second ? tr("STR_YES").c_str() : tr("STR_NO").c_str()));
+		_lstMods->addRow(3, tr(modName).c_str(), "", (pair.second ? tr("STR_YES").c_str() : tr("STR_NO").c_str()));
 		_mods.push_back(pair);
 	}
 
@@ -359,13 +359,13 @@ void ModListState::moveModUp(Action *action, unsigned int row, bool max)
 		if (curScrollPos < targetScrollPos)
 		{
 			int ydiff = _lstMods->getTextHeight(row - 1);
-			SDL_WarpMouseInWindow(0, action->getLeftBlackBand() + action->getXMouse(),
+			SDL_WarpMouseInWindow(NULL, action->getLeftBlackBand() + action->getXMouse(),
 				 action->getTopBlackBand() + action->getYMouse() - static_cast<Uint16>(ydiff * action->getYScale()));
 		}
 		else
 		{
 			int ydiff = _lstMods->getRowY(row) - _lstMods->getY();
-			SDL_WarpMouseInWindow(0, action->getLeftBlackBand() + action->getXMouse(),
+			SDL_WarpMouseInWindow(NULL, action->getLeftBlackBand() + action->getXMouse(),
 				 action->getTopBlackBand() + action->getYMouse() - static_cast<Uint16>(ydiff * action->getYScale()));
 			_lstMods->scrollTo(targetScrollPos);
 		}
@@ -443,13 +443,13 @@ void ModListState::moveModDown(Action *action, unsigned int row, bool max)
 		if (curScrollPos + (int)_lstMods->getVisibleRows() > targetScrollPos)
 		{
 			int ydiff = _lstMods->getTextHeight(row + 1);
-			SDL_WarpMouseInWindow(0, action->getLeftBlackBand() + action->getXMouse(),
+			SDL_WarpMouseInWindow(NULL, action->getLeftBlackBand() + action->getXMouse(),
 				 action->getTopBlackBand() + action->getYMouse() + static_cast<Uint16>(ydiff * action->getYScale()));
 		}
 		else
 		{
 			int ydiff = _lstMods->getY() + _lstMods->getHeight() - (_lstMods->getRowY(row) + _lstMods->getTextHeight(row));
-			SDL_WarpMouseInWindow(0, action->getLeftBlackBand() + action->getXMouse(),
+			SDL_WarpMouseInWindow(NULL, action->getLeftBlackBand() + action->getXMouse(),
 				 action->getTopBlackBand() + action->getYMouse() + static_cast<Uint16>(ydiff * action->getYScale()));
 			_lstMods->scrollTo(targetScrollPos - _lstMods->getVisibleRows() + 1);
 		}

@@ -52,6 +52,9 @@
 #include "../Interface/NumberText.h"
 #include "../Interface/Text.h"
 #include "../fmath.h"
+#ifdef __EMSCRIPTEN__
+#define SDL_GetKeyState SDL_GetKeyboardState
+#endif
 
 
 /*

@@ -78,7 +78,9 @@
 #include <dirent.h>
 #ifndef __ANDROID__
 #ifndef __CYGWIN__
+#ifndef __EMSCRIPTEN__
 #include <execinfo.h>
+#endif
 #endif
 #include <cxxabi.h>
 #include <dlfcn.h>
@@ -95,12 +97,14 @@
 #include "SDL2Helpers.h"
 #include "../version.h"
 
-#ifdef __ANDROID__
-#include <android/log.h>
-#include <jni.h>
-#include "State.h"
-#include "Game.h"
-#include "../Menu/StartState.h"
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+
+// clang-format off
+EM_ASYNC_JS(void, do_sync_idbfs, (), {
+	await new Promise((resolve, reject) => FS.syncfs(err => err ? reject(err) : resolve()))
+});
+// clang-format on
 #endif
 
 namespace OpenXcom
@@ -759,7 +763,11 @@ bool deleteFile(const std::string &path)
 	auto pathW = pathToWindows(path);
 	return (DeleteFileW(pathW.c_str()) != 0);
 #else
-	return (remove(path.c_str()) == 0);
+	bool res = (remove(path.c_str()) == 0);
+#ifdef __EMSCRIPTEN__
+	do_sync_idbfs();
+#endif
+	return res;
 #endif
 }
 
@@ -900,13 +908,10 @@ bool compareExt(const std::string &filename, const std::string &extension)
  */
 std::string getLocale()
 {
-#ifdef __ANDROID__
 	if (Options::systemLocale.length() > 0)
 	{
 		return Options::systemLocale;
 	}
-	return std::string("en-US");
-#endif
 #ifdef _WIN32
 	char language[9], country[9];
 
@@ -1143,6 +1148,9 @@ bool writeFile(const std::string& filename, const std::string& data) {
 		return false;
 	}
 	SDL_RWclose(rwops);
+#ifdef __EMSCRIPTEN__
+	do_sync_idbfs();
+#endif
 	return true;
 }
 
@@ -1165,6 +1173,9 @@ bool writeFile(const std::string& filename, const std::vector<unsigned char>& da
 		return false;
 	}
 	SDL_RWclose(rwops);
+#ifdef __EMSCRIPTEN__
+	do_sync_idbfs();
+#endif
 	return true;
 }
 
@@ -1636,6 +1647,7 @@ void stackTrace(void *ctx)
 	Log(LOG_FATAL) << "Unfortunately, no stack trace information is available";
 #elif defined(__ANDROID__)
 #warning Stack trace not supported on Android yet!
+#elif __EMSCRIPTEN__
 	Log(LOG_FATAL) << "Unfortunately, no stack trace information is available";
 #else    /* not _WIN32 or __CYGWIN__ */
 	void *frames[32];
@@ -1812,6 +1824,9 @@ static bool logToFile(const std::string& filename, const std::string& data) {
 		SDL_RWclose(rwops);
 		return rv == 1;
 	}
+#ifdef __EMSCRIPTEN__
+	do_sync_idbfs();
+#endif
 	return false;
 }
 

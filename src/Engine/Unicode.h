@@ -33,7 +33,11 @@ typedef Uint32 UCode;
  * Represents a string where each character
  * is a Unicode codepoint. Used for rendering text.
  */
+#ifdef __EMSCRIPTEN__
+typedef std::u32string UString;
+#else
 typedef std::basic_string<UCode> UString;
+#endif
 
 /**
  * Functions for dealing with encoding, strings, text

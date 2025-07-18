@@ -21,7 +21,11 @@
 #include "ShaderMove.h"
 #include <vector>
 #include <algorithm>
+#ifndef __EMSCRIPTEN__
 #include <SDL_gfxPrimitives.h>
+#else
+#include "../../libs/SDL_gfx/SDL_gfxPrimitives.h"
+#endif
 #include <SDL_image.h>
 #include "../lodepng.h"
 #include "Palette.h"
@@ -816,18 +820,6 @@ void Surface::drawCircle(Sint16 x, Sint16 y, Sint16 r, Uint8 color)
 }
 
 /**
- * Draws a filled polygon on the surface.
- * @param x Array of x coordinates.
- * @param y Array of y coordinates.
- * @param n Number of points.
- * @param color Color of the polygon.
- */
-void Surface::drawPolygon(Sint16 *x, Sint16 *y, int n, Uint8 color)
-{
-	filledPolygonColor(_surface.get(), x, y, n, Palette::getRGBA(getPalette(), color));
-}
-
-/**
  * Draws a textured polygon on the surface.
  * @param x Array of x coordinates.
  * @param y Array of y coordinates.
@@ -841,17 +833,6 @@ void Surface::drawTexturedPolygon(Sint16 *x, Sint16 *y, int n, Surface *texture,
 	texturedPolygon(_surface.get(), x, y, n, texture->getSurface(), dx, dy);
 }
 
-/**
- * Draws a text string on the surface.
- * @param x X coordinate in pixels.
- * @param y Y coordinate in pixels.
- * @param s Character string to draw.
- * @param color Color of string.
- */
-void Surface::drawString(Sint16 x, Sint16 y, const char *s, Uint8 color)
-{
-	stringColor(_surface.get(), x, y, s, Palette::getRGBA(getPalette(), color));
-}
 
 /**
  * Changes the position of the surface in the X axis.

@@ -20,7 +20,9 @@
 #include <sstream>
 #include <iomanip>
 #include "../fmath.h"
+#ifndef __EMSCRIPTEN__
 #include <SDL_gfxPrimitives.h>
+#endif
 #include "Map.h"
 #include "Camera.h"
 #include "BattlescapeState.h"
@@ -55,6 +57,7 @@
 #include "../Engine/Sound.h"
 #include "../Engine/Action.h"
 #include "../Engine/Script.h"
+#include "../Engine/SDLRenderer.h"
 #include "../Engine/Logger.h"
 #include "../Engine/Timer.h"
 #include "../Engine/CrossPlatform.h"
@@ -986,7 +989,7 @@ void BattlescapeState::mapOver(Action *action)
 		{
 			// Set the mouse cursor back
 			SDL_EventState(SDL_MOUSEMOTION, SDL_IGNORE);
-			//SDL_WarpMouseInWindow(NULL, _game->getScreen()->getWidth() / 2, _game->getScreen()->getHeight() / 2 - _map->getIconHeight() / 2);
+			SDL_WarpMouseInWindow(NULL, _game->getScreen()->getWidth() / 2, _game->getScreen()->getHeight() / 2 - _map->getIconHeight() / 2);
 			SDL_EventState(SDL_MOUSEMOTION, SDL_ENABLE);
 		}
 #endif
@@ -3407,6 +3410,7 @@ inline void BattlescapeState::handle(Action *action)
  */
 void BattlescapeState::saveAIMap()
 {
+#ifndef __EMSCRIPTEN__
 	Uint32 start = SDL_GetTicks();
 	BattleUnit *unit = _save->getSelectedUnit();
 	if (!unit) return;
@@ -3527,6 +3531,7 @@ void BattlescapeState::saveAIMap()
 
 	CrossPlatform::writeFile(ss.str(), out);
 	Log(LOG_INFO) << "saveAIMap() completed in " << SDL_GetTicks() - start << "ms.";
+#endif
 }
 
 /**
@@ -4355,7 +4360,6 @@ void BattlescapeState::stopScrolling(Action *action)
 #ifndef __MOBILE__
 	if (Options::battleDragScrollInvert)
 	{
-		/* FIXME: Mouse warping still doesn't work as intended */
 		SDL_WarpMouseInWindow(NULL, _xBeforeMouseScrolling, _yBeforeMouseScrolling);
 		action->setMouseAction(_xBeforeMouseScrolling, _yBeforeMouseScrolling, _map->getX(), _map->getY());
 		_battleGame->setupCursor();
@@ -4366,7 +4370,6 @@ void BattlescapeState::stopScrolling(Action *action)
 	}
 	else
 	{
-		/* FIXME: Mouse warping still doesn't work as intended */
 		SDL_WarpMouseInWindow(NULL, _cursorPosition.x, _cursorPosition.y);
 		action->setMouseAction(_cursorPosition.x, _cursorPosition.y, _map->getX(), _map->getY());
 		_map->setSelectorPosition(action->getAbsoluteXMouse(), action->getAbsoluteYMouse());

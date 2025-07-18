@@ -834,7 +834,11 @@ void Game::loadLanguages()
 	std::string currentLang = defaultLang;
 
 	// No language set, detect based on system
-	if (Options::language.empty())
+#if defined(__EMSCRIPTEN__)
+	if (Options::language.empty() || !Options::systemLocale.empty())
+#else
+	if (!Options::systemLocale.empty())
+#endif
 	{
 		std::string locale = CrossPlatform::getLocale();
 		std::string lang = locale.substr(0, locale.find_first_of('-'));

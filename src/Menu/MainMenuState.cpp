@@ -72,7 +72,11 @@ MainMenuState::MainMenuState(bool updateCheck)
 	_btnNewBattle = new TextButton(92, 20, 164, 90);
 	_btnLoad = new TextButton(92, 20, 64, 118);
 	_btnOptions = new TextButton(92, 20, 164, 118);
+#ifndef __EMSCRIPTEN__
 	_btnMods = new TextButton(92, 20, 64, 146);
+#else
+	_btnMods = new TextButton(92, 20, 114, 146);
+#endif
 	_btnQuit = new TextButton(92, 20, 164, 146);
 	_btnUpdate = new TextButton(72, 16, 209, 27);
 	_txtUpdateInfo = new Text(320, 17, 0, 11);
@@ -87,7 +91,9 @@ MainMenuState::MainMenuState(bool updateCheck)
 	add(_btnLoad, "button", "mainMenu");
 	add(_btnOptions, "button", "mainMenu");
 	add(_btnMods, "button", "mainMenu");
+#ifndef __EMSCRIPTEN__
 	add(_btnQuit, "button", "mainMenu");
+#endif
 	add(_btnUpdate, "button", "mainMenu");
 	add(_txtUpdateInfo, "text", "mainMenu");
 	add(_txtTitle, "text", "mainMenu");
@@ -234,8 +240,8 @@ MainMenuState::MainMenuState(bool updateCheck)
 	_txtTitle->setAlign(ALIGN_CENTER);
 	_txtTitle->setBig();
 	std::ostringstream title;
-	title << tr("STR_OPENXCOM").arg(Options::getActiveMasterInfo()->getVersionDisplay()) << Unicode::TOK_NL_SMALL;
-	title << "OpenXcom " << OPENXCOM_VERSION_SHORT << OPENXCOM_VERSION_GIT;
+	//title << tr("STR_OPENXCOM").arg(Options::getActiveMasterInfo()->getVersionDisplay()) << Unicode::TOK_NL_SMALL;
+	title << "OpenXcom " << OPENXCOM_VERSION_ENGINE;// << OPENXCOM_VERSION_GIT;
 	_txtTitle->setText(title.str());
 }
 

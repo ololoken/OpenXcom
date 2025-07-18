@@ -29,8 +29,12 @@ namespace OpenXcom
  * String with normalized version number,
  * as is not printable it use `signed char` to
  * not confuse it with normal string.
- */
+*/
+#ifdef __EMSCRIPTEN__
+typedef std::u32string ModInfoNormalizedVersion;
+#else
 typedef std::basic_string<signed char> ModInfoNormalizedVersion;
+#endif
 
 /**
  * Version number with normalized value.

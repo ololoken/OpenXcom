@@ -2168,16 +2168,8 @@ void Globe::setupRadii(int width, int height)
  */
 void Globe::stopScrolling(Action *action)
 {
-#ifndef __MOBILE__
-	/* FIXME: Still doesn't work as intended */
 	SDL_WarpMouseInWindow(NULL, _xBeforeMouseScrolling, _yBeforeMouseScrolling);
 	action->setMouseAction(_xBeforeMouseScrolling, _yBeforeMouseScrolling, getX(), getY());
-#else
-	//Log(LOG_INFO) << "Globe.cpp: stopScrolling(): setting mouse to " << _xBeforeMouseScrolling << ", " << _yBeforeMouseScrolling;
-	action->setMouseAction(_xBeforeMouseScrolling, _yBeforeMouseScrolling, getX(), getY());
-	/* action->getDetails()->motion.x = _xBeforeMouseScrolling; action->getDetails()->motion.y = _yBeforeMouseScrolling;
-	_game->getCursor()->handle(action); */
-#endif
 }
 
 /**
