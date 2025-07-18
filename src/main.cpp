@@ -28,6 +28,9 @@
 #include "Engine/FileMap.h"
 #include "Menu/StartState.h"
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
 /** @mainpage
  * @author OpenXcom Developers
  *
@@ -123,7 +126,9 @@ int main(int argc, char *argv[])
 	title << "OpenXcom " << OPENXCOM_VERSION_SHORT << OPENXCOM_VERSION_GIT;
 	Options::baseXResolution = Options::displayWidth;
 	Options::baseYResolution = Options::displayHeight;
-
+#ifdef __EMSCRIPTEN__
+	EM_ASM(Module?.gameReady?.());
+#endif
 	game = new Game(title.str());
 	State::setGamePtr(game);
 	game->setState(new StartState);
