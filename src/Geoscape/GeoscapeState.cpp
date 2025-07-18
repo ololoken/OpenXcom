@@ -1073,7 +1073,8 @@ void GeoscapeState::time5Seconds()
 					timerReset();
 					if (!base->getDefenses()->empty() && !ufo->getMission()->getRules().ignoreBaseDefenses())
 					{
-						popup(new BaseDefenseState(base, ufo, this));
+						bool instaHyper = ufo->getRules()->isInstaHyper() || mission->getRules().isInstaHyper();
+						popup(new BaseDefenseState(base, ufo, this, instaHyper));
 						return; // don't allow multiple simultaneous attacks in the same game tick
 					}
 					else
@@ -2899,7 +2900,7 @@ void GeoscapeState::time1Month()
 	popup(new MonthlyReportState(_globe));
 
 	// Handle Xcom Operatives discovering bases
-	if (!_game->getSavedGame()->getAlienBases()->empty() && RNG::percent(20))
+	if (!_game->getSavedGame()->getAlienBases()->empty() && RNG::percent(_game->getMod()->getChanceToDetectAlienBaseEachMonth()))
 	{
 		for (auto* ab : *_game->getSavedGame()->getAlienBases())
 		{

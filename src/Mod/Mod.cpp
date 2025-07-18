@@ -420,10 +420,12 @@ Mod::Mod() :
 	_maxViewDistance(20), _maxDarknessToSeeUnits(9), _maxStaticLightDistance(16), _maxDynamicLightDistance(24), _enhancedLighting(0),
 	_costHireEngineer(0), _costHireScientist(0),
 	_costEngineer(0), _costScientist(0), _timePersonnel(0), _hireByCountryOdds(0), _hireByRegionOdds(0), _initialFunding(0),
-	_aiUseDelayBlaster(3), _aiUseDelayFirearm(0), _aiUseDelayGrenade(3), _aiUseDelayProxy(999), _aiUseDelayMelee(0), _aiUseDelayPsionic(0),
+	_aiUseDelayBlaster(3), _aiUseDelayFirearm(0), _aiUseDelayGrenade(3), _aiUseDelayProxy(999), _aiUseDelayMelee(0), _aiUseDelayPsionic(0), _aiUseDelayMedikit(999),
 	_aiFireChoiceIntelCoeff(5), _aiFireChoiceAggroCoeff(5), _aiExtendedFireModeChoice(false), _aiRespectMaxRange(false), _aiDestroyBaseFacilities(false),
 	_aiPickUpWeaponsMoreActively(false), _aiPickUpWeaponsMoreActivelyCiv(false),
-	_maxLookVariant(0), _tooMuchSmokeThreshold(10), _customTrainingFactor(100), _minReactionAccuracy(0), _chanceToStopRetaliation(0), _lessAliensDuringBaseDefense(false),
+	_aiReactionFireThreshold(0), _aiReactionFireThresholdCiv(0),
+	_maxLookVariant(0), _tooMuchSmokeThreshold(10), _customTrainingFactor(100),
+	_chanceToStopRetaliation(0), _chanceToDetectAlienBaseEachMonth(20), _lessAliensDuringBaseDefense(false),
 	_allowCountriesToCancelAlienPact(false), _buildInfiltrationBaseCloseToTheCountry(false), _infiltrateRandomCountryInTheRegion(false), _allowAlienBasesOnWrongTextures(true),
 	_kneelBonusGlobal(115), _oneHandedPenaltyGlobal(80),
 	_enableCloseQuartersCombat(0), _closeQuartersAccuracyGlobal(100), _closeQuartersTuCostGlobal(12), _closeQuartersEnergyCostGlobal(8), _closeQuartersSneakUpGlobal(0),
@@ -2314,6 +2316,7 @@ void Mod::loadAll()
 	afterLoadHelper("craftWeapons", this, _craftWeapons, &RuleCraftWeapon::afterLoad);
 	afterLoadHelper("countries", this, _countries, &RuleCountry::afterLoad);
 	afterLoadHelper("crafts", this, _crafts, &RuleCraft::afterLoad);
+	afterLoadHelper("events", this, _events, &RuleEvent::afterLoad);
 
 	for (auto& a : _armors)
 	{
@@ -3189,6 +3192,7 @@ void Mod::loadFile(const FileMap::FileRecord &filerec, ModScript &parsers)
 		nodeAI.tryRead("aiUseDelayProxy", _aiUseDelayProxy);
 		nodeAI.tryRead("useDelayMelee", _aiUseDelayMelee);
 		nodeAI.tryRead("useDelayPsionic", _aiUseDelayPsionic);
+		nodeAI.tryRead("useDelayMedikit", _aiUseDelayMedikit);
 
 		nodeAI.tryRead("fireChoiceIntelCoeff", _aiFireChoiceIntelCoeff);
 		nodeAI.tryRead("fireChoiceAggroCoeff", _aiFireChoiceAggroCoeff);
@@ -3197,6 +3201,8 @@ void Mod::loadFile(const FileMap::FileRecord &filerec, ModScript &parsers)
 		nodeAI.tryRead("destroyBaseFacilities", _aiDestroyBaseFacilities);
 		nodeAI.tryRead("pickUpWeaponsMoreActively", _aiPickUpWeaponsMoreActively);
 		nodeAI.tryRead("pickUpWeaponsMoreActivelyCiv", _aiPickUpWeaponsMoreActivelyCiv);
+		nodeAI.tryRead("reactionFireThreshold", _aiReactionFireThreshold);
+		nodeAI.tryRead("reactionFireThresholdCiv", _aiReactionFireThresholdCiv);
 
 		nodeAI.tryRead("targetWeightThreatThreshold", _aiTargetWeightThreatThreshold);
 		nodeAI.tryRead("targetWeightAsHostile", _aiTargetWeightAsHostile);
@@ -3207,8 +3213,8 @@ void Mod::loadFile(const FileMap::FileRecord &filerec, ModScript &parsers)
 	reader.tryRead("maxLookVariant", _maxLookVariant);
 	reader.tryRead("tooMuchSmokeThreshold", _tooMuchSmokeThreshold);
 	reader.tryRead("customTrainingFactor", _customTrainingFactor);
-	reader.tryRead("minReactionAccuracy", _minReactionAccuracy);
 	reader.tryRead("chanceToStopRetaliation", _chanceToStopRetaliation);
+	reader.tryRead("chanceToDetectAlienBaseEachMonth", _chanceToDetectAlienBaseEachMonth);
 	reader.tryRead("lessAliensDuringBaseDefense", _lessAliensDuringBaseDefense);
 	reader.tryRead("allowCountriesToCancelAlienPact", _allowCountriesToCancelAlienPact);
 	reader.tryRead("buildInfiltrationBaseCloseToTheCountry", _buildInfiltrationBaseCloseToTheCountry);
@@ -3931,8 +3937,13 @@ SavedGame *Mod::newSave(GameDifficulty diff) const
 			{
 				// "Large soldiers" just stay in the base
 			}
-			else if (soldier->getRules()->getAllowPiloting())
+			else
 			{
+				if (soldier->getRules()->getAllowPiloting())
+				{
+					soldier->prepareStatsWithBonuses(this); // refresh stats for checking pilot requirements
+				}
+
 				Craft *found = 0;
 				for (auto* craft : *base->getCrafts())
 				{
@@ -3945,22 +3956,11 @@ SavedGame *Mod::newSave(GameDifficulty diff) const
 					if (!craft->getRules()->getAllowLanding() && err == CPE_None && craft->getSpaceUsed() < craft->getRules()->getPilots())
 					{
 						// Fill interceptors with minimum amount of pilots necessary
-						found = craft;
-					}
-				}
-				soldier->setCraft(found);
-			}
-			else
-			{
-				Craft *found = 0;
-				for (auto* craft : *base->getCrafts())
-				{
-					CraftPlacementErrors err = craft->validateAddingSoldier(craft->getSpaceAvailable(), soldier);
-					if (craft->getRules()->getAllowLanding() && err == CPE_None)
-					{
-						// First available transporter will do
-						found = craft;
-						break;
+						if (soldier->hasAllPilotingRequirements(craft))
+						{
+							found = craft;
+							break;
+						}
 					}
 				}
 				soldier->setCraft(found);
@@ -4440,6 +4440,27 @@ int Mod::getScientistCost() const
 int Mod::getPersonnelTime() const
 {
 	return _timePersonnel;
+}
+
+/**
+ * Returns the reaction fire threshold (default = 0).
+ * @return The threshold for a given faction.
+ */
+int Mod::getReactionFireThreshold(UnitFaction faction) const
+{
+	switch (faction)
+	{
+	case FACTION_PLAYER:
+		return Options::oxceReactionFireThreshold;
+	case FACTION_HOSTILE:
+		return _aiReactionFireThreshold;
+	case FACTION_NEUTRAL:
+		return _aiReactionFireThresholdCiv;
+	default:
+		break;
+	}
+
+	return 0;
 }
 
 /**

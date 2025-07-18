@@ -1941,8 +1941,12 @@ void StatsForNerdsState::initItemList()
 	}
 
 	addInteger(ss, itemRule->getWeight(), "weight", 3);
-	addInteger(ss, itemRule->getThrowRange(), "throwRange");
-	addInteger(ss, itemRule->getUnderwaterThrowRange(), "underwaterThrowRange");
+	addInteger(ss, itemRule->getThrowRange(), "throwRange", 200);
+	addInteger(ss, itemRule->getUnderwaterThrowRange(), "underwaterThrowRange", 200);
+
+	addInteger(ss, itemRule->getThrowDropoffRange(), "throwDropoffRange", 99);
+	addInteger(ss, itemRule->getUnderwaterThrowDropoffRange(), "underwaterThrowDropoffRange", 99);
+	addInteger(ss, itemRule->getThrowDropoff(), "throwDropoff", 5);
 
 	addRuleStatBonus(ss, *itemRule->getThrowMultiplierRaw(), "throwMultiplier");
 	addIntegerPercent(ss, itemRule->getAccuracyThrow(), "accuracyThrow", 100);
@@ -2793,7 +2797,8 @@ void StatsForNerdsState::initArmorList()
 		_txtTitle->setAlign(ALIGN_LEFT);
 	}
 
-	addIntegerPercent(ss, armorRule->getHeatVision(), "heatVision");
+	addIntegerPercent(ss, armorRule->getVisibilityThroughSmoke(), "heatVision"); // visibilityThroughSmoke
+	addIntegerPercent(ss, armorRule->getVisibilityThroughFire(), "visibilityThroughFire", 100);
 	addInteger(ss, armorRule->getPsiVision(), "psiVision");
 	addInteger(ss, armorRule->getPsiCamouflage(), "psiCamouflage");
 
@@ -2830,6 +2835,7 @@ void StatsForNerdsState::initArmorList()
 		addSection("{Naming}", "", _white);
 		addSingleString(ss, armorRule->getType(), "type");
 		addSingleString(ss, armorRule->getUfopediaType(), "ufopediaType");
+		addInteger(ss, armorRule->getGroup(), "group");
 		addInteger(ss, armorRule->getListOrder(), "listOrder");
 		addRuleNamed(ss, armorRule->getRequiredResearch(), "requires");
 
@@ -2993,8 +2999,9 @@ void StatsForNerdsState::initSoldierBonusList()
 
 	addInteger(ss, bonusRule->getVisibilityAtDark(), "visibilityAtDark");
 	addInteger(ss, bonusRule->getVisibilityAtDay(), "visibilityAtDay");
-	addInteger(ss, bonusRule->getPsiVision(), "getPsiVision");
-	addInteger(ss, bonusRule->getHeatVision(), "getHeatVision");
+	addInteger(ss, bonusRule->getPsiVision(), "psiVision");
+	addInteger(ss, bonusRule->getVisibilityThroughSmoke(), "heatVision"); // visibilityThroughSmoke
+	addInteger(ss, bonusRule->getVisibilityThroughFire(), "visibilityThroughFire", 0);
 
 	addHeading("recovery");
 	{
@@ -3184,6 +3191,8 @@ void StatsForNerdsState::initFacilityList()
 	addInteger(ss, facilityRule->getAmmoMax(), "ammoMax", 0);
 	addInteger(ss, facilityRule->getRearmRate(), "rearmRate", 1);
 	addInteger(ss, facilityRule->getAmmoNeeded(), "ammoNeeded", 1);
+	addBoolean(ss, facilityRule->unifiedDamageFormula(), "unifiedDamageFormula");
+	addIntegerPercent(ss, facilityRule->getShieldDamageModifier(), "shieldDamageModifier", 100);
 	addRule(ss, facilityRule->getAmmoItem(), "ammoItem");
 
 	addInteger(ss, facilityRule->getMaxAllowedPerBase(), "maxAllowedPerBase");
@@ -3198,6 +3207,29 @@ void StatsForNerdsState::initFacilityList()
 	addInteger(ss, facilityRule->getRemovalTime(), "removalTime");
 	addBoolean(ss, facilityRule->getCanBeBuiltOver(), "canBeBuiltOver");
 	addVectorOfRules(ss, facilityRule->getBuildOverFacilities(), "buildOverFacilities");
+
+	if (facilityRule->getDefenseValue() > 0)
+	{
+		addHeading("_calculatedValues");
+		if (facilityRule->unifiedDamageFormula() && facilityRule->getAmmoItem())
+		{
+			std::ostringstream ss2;
+			ss2 << facilityRule->getAmmoItem()->getDamageType()->getRandomDamage(facilityRule->getDefenseValue(), 1);
+			ss2 << "-";
+			ss2 << facilityRule->getAmmoItem()->getDamageType()->getRandomDamage(facilityRule->getDefenseValue(), 2);
+			addSingleString(ss, ss2.str(), "_damageRange", "", false);
+		}
+		else
+		{
+			// (damage) * (50-150% damage spread)
+			std::ostringstream ss2;
+			ss2 << facilityRule->getDefenseValue() / 2;
+			ss2 << "-";
+			ss2 << facilityRule->getDefenseValue() / 2 + facilityRule->getDefenseValue();
+			addSingleString(ss, ss2.str(), "_damageRange", "", false);
+		}
+		endHeading();
+	}
 
 	if (_showDebug)
 	{
@@ -3289,11 +3321,14 @@ void StatsForNerdsState::initCraftList()
 	addInteger(ss, craftRule->getMaxUnits(), "soldiers");
 	addInteger(ss, craftRule->getMaxUnitsLimit(), "maxUnitsLimit", craftRule->getMaxUnits());
 	addInteger(ss, craftRule->getPilots(), "pilots");
+	addUnitStatBonus(ss, craftRule->getPilotMinStatsRequired(), "pilotMinStatsRequired");
+	addVectorOfRulesNamed(ss, craftRule->getPilotSoldierBonusesRequired(), "pilotSoldierBonusesRequired");
 	addInteger(ss, craftRule->getMaxVehiclesAndLargeSoldiers(), "vehicles");
 	addInteger(ss, craftRule->getMaxVehiclesAndLargeSoldiersLimit(), "maxHWPUnitsLimit", craftRule->getMaxVehiclesAndLargeSoldiers());
 
 	addBoolean(ss, craftRule->isOnlyOneSoldierGroupAllowed(), "onlyOneSoldierGroupAllowed");
 	addVectorOfIntegers(ss, craftRule->getAllowedSoldierGroups(), "allowedSoldierGroups");
+	addVectorOfIntegers(ss, craftRule->getAllowedArmorGroups(), "allowedArmorGroups");
 
 	addInteger(ss, craftRule->getMaxSmallSoldiers(), "maxSmallSoldiers", -1);
 	addInteger(ss, craftRule->getMaxLargeSoldiers(), "maxLargeSoldiers", -1);
@@ -3398,6 +3433,7 @@ void StatsForNerdsState::initCraftList()
 		addInteger(ss, craftRule->getMaxDamage(), "damageMax");
 		addInteger(ss, craftRule->getStats().armor, "armor");
 		addIntegerPercent(ss, craftRule->getStats().avoidBonus, "avoidBonus");
+		addIntegerPercent(ss, craftRule->getStats().avoidBonus2, "avoidBonus2");
 		addIntegerPercent(ss, craftRule->getStats().powerBonus, "powerBonus");
 		addIntegerPercent(ss, craftRule->getStats().hitBonus, "hitBonus");
 		addInteger(ss, craftRule->getMaxFuel(), "fuelMax");
@@ -3615,6 +3651,7 @@ void StatsForNerdsState::initUfoList()
 		addInteger(ss, ufoRule->getStats().damageMax, "damageMax");
 		addInteger(ss, ufoRule->getStats().armor, "armor");
 		addIntegerPercent(ss, ufoRule->getStats().avoidBonus, "avoidBonus");
+		addIntegerPercent(ss, ufoRule->getStats().avoidBonus2, "avoidBonus2");
 		addIntegerPercent(ss, ufoRule->getStats().powerBonus, "powerBonus");
 		addIntegerPercent(ss, ufoRule->getStats().hitBonus, "hitBonus");
 		addInteger(ss, ufoRule->getStats().fuelMax, "fuelMax");
@@ -3682,6 +3719,7 @@ void StatsForNerdsState::initUfoList()
 				addInteger(ss, raceBonus.second.damageMax, "damageMax");
 				addInteger(ss, raceBonus.second.armor, "armor");
 				addIntegerPercent(ss, raceBonus.second.avoidBonus, "avoidBonus");
+				addIntegerPercent(ss, raceBonus.second.avoidBonus2, "avoidBonus2");
 				addIntegerPercent(ss, raceBonus.second.powerBonus, "powerBonus");
 				addIntegerPercent(ss, raceBonus.second.hitBonus, "hitBonus");
 				addInteger(ss, raceBonus.second.fuelMax, "fuelMax");
@@ -3797,6 +3835,7 @@ void StatsForNerdsState::initCraftWeaponList()
 
 	addInteger(ss, craftWeaponRule->getTractorBeamPower(), "tractorBeamPower");
 	addInteger(ss, craftWeaponRule->getDamage(), "damage");
+	addBoolean(ss, craftWeaponRule->unifiedDamageFormula(), "unifiedDamageFormula");
 	addIntegerPercent(ss, craftWeaponRule->getShieldDamageModifier(), "shieldDamageModifier", 100);
 	addIntegerKm(ss, craftWeaponRule->getRange(), "range");
 	addIntegerPercent(ss, craftWeaponRule->getAccuracy(), "accuracy");
@@ -3817,6 +3856,7 @@ void StatsForNerdsState::initCraftWeaponList()
 		addInteger(ss, craftWeaponRule->getBonusStats().damageMax, "damageMax");
 		addInteger(ss, craftWeaponRule->getBonusStats().armor, "armor");
 		addIntegerPercent(ss, craftWeaponRule->getBonusStats().avoidBonus, "avoidBonus");
+		addIntegerPercent(ss, craftWeaponRule->getBonusStats().avoidBonus2, "avoidBonus2");
 		addIntegerPercent(ss, craftWeaponRule->getBonusStats().powerBonus, "powerBonus");
 		addIntegerPercent(ss, craftWeaponRule->getBonusStats().hitBonus, "hitBonus");
 		addInteger(ss, craftWeaponRule->getBonusStats().fuelMax, "fuelMax");
@@ -3841,7 +3881,25 @@ void StatsForNerdsState::initCraftWeaponList()
 	if (craftWeaponRule->getStandardReload() > 0)
 	{
 		addHeading("_calculatedValues");
+		if (craftWeaponRule->unifiedDamageFormula())
 		{
+			const RuleItem* damageItem = craftWeaponRule->getClipItem() ? craftWeaponRule->getClipItem() : craftWeaponRule->getLauncherItem();
+
+			std::ostringstream ss2;
+			ss2 << damageItem->getDamageType()->getRandomDamage(craftWeaponRule->getDamage(), 1);
+			ss2 << "-";
+			ss2 << damageItem->getDamageType()->getRandomDamage(craftWeaponRule->getDamage(), 2);
+			addSingleString(ss, ss2.str(), "_damageRangeBasic", "", false);
+		}
+		else
+		{
+			// (damage) * (50-100% damage spread), not considering craft `powerBonus`
+			std::ostringstream ss2;
+			ss2 << craftWeaponRule->getDamage() / 2;
+			ss2 << "-";
+			ss2 << craftWeaponRule->getDamage();
+			addSingleString(ss, ss2.str(), "_damageRangeBasic", "", false);
+
 			// (damage / standard reload * 60) * (accuracy / 100) * (50-100% damage spread)
 			int avgDPM = craftWeaponRule->getDamage() * craftWeaponRule->getAccuracy() * 60 * 3 / 4 / craftWeaponRule->getStandardReload() / 100;
 			addInteger(ss, avgDPM, "_averageDPM");
@@ -3849,9 +3907,8 @@ void StatsForNerdsState::initCraftWeaponList()
 			// (damage * ammoMax) * (accuracy / 100) * (50-100% damage spread)
 			int avgTotalDamage = craftWeaponRule->getDamage() * craftWeaponRule->getAmmoMax() * craftWeaponRule->getAccuracy() * 3 / 4 / 100;
 			addInteger(ss, avgTotalDamage, "_averageTotalDamage");
-
-			endHeading();
 		}
+		endHeading();
 	}
 
 	if (_showDebug)

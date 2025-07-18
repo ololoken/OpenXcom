@@ -270,12 +270,8 @@ DogfightState::DogfightState(GeoscapeState *state, Craft *craft, Ufo *ufo, bool 
 	}
 
 	// pilot modifiers
-	const std::vector<Soldier*> pilots = _craft->getPilotList(false);
+	const std::vector<Soldier*> pilots = _craft->getPilotList(false, _game->getMod()); // refresh soldier bonuses
 
-	for (auto* pilot : pilots)
-	{
-		pilot->prepareStatsWithBonuses(_game->getMod()); // refresh soldier bonuses
-	}
 	_pilotAccuracyBonus = _craft->getPilotAccuracyBonus(pilots, _game->getMod());
 	_pilotDodgeBonus = _craft->getPilotDodgeBonus(pilots, _game->getMod());
 	_pilotApproachSpeedModifier = _craft->getPilotApproachSpeedModifier(pilots, _game->getMod());
@@ -1206,8 +1202,18 @@ void DogfightState::update()
 						// Formula delivered by Volutar, altered by Extended version.
 						int power = p->getDamage() * (_craft->getCraftStats().powerBonus + 100) / 100;
 
+						int damage = 0;
+						if (p->getDamageItem())
+						{
+							// unified damage formula
+							damage = p->getDamageItem()->getDamageType()->getRandomDamage(power);
+						}
+						else
+						{
+							// vanilla dmg formula: 50-100%
+							damage = RNG::generate(power / 2, power);
+						}
 						// Handle UFO shields
-						int damage = RNG::generate(power / 2, power);
 						int shieldDamage = 0;
 						if (_ufo->getShield() != 0)
 						{
@@ -1868,7 +1874,7 @@ void DogfightState::ufoFireWeapon()
 	_ufo->setFireCountdown(RNG::generate(0, fireCountdown) + fireCountdown);
 
 	setStatus("STR_UFO_RETURN_FIRE");
-	CraftWeaponProjectile *p = new CraftWeaponProjectile();
+	CraftWeaponProjectile *p = new CraftWeaponProjectile(nullptr);
 	p->setType(CWPT_PLASMA_BEAM);
 	p->setAccuracy(60);
 	p->setDamage(_ufo->getRules()->getWeaponPower());
@@ -2706,7 +2712,7 @@ void DogfightState::awardExperienceToPilots()
 	if (_firedAtLeastOnce && !_experienceAwarded && _craft && _ufo && (_ufo->isCrashed() || _ufo->isDestroyed()))
 	{
 		bool psiStrengthEval = (Options::psiStrengthEval && _game->getSavedGame()->isResearched(_game->getMod()->getPsiRequirements()));
-		for (auto* pilot : _craft->getPilotList(false))
+		for (auto* pilot : _craft->getPilotList(false, nullptr)) // refresh already done in the constructor
 		{
 			if (pilot->getCurrentStats()->firing < pilot->getRules()->getStatCaps().firing)
 			{
