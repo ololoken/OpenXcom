@@ -642,7 +642,6 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   -sEXPORT_ALL -sEXPORTED_RUNTIME_METHODS=callMain,addRunDependency,removeRunDependency \
   -sEXIT_RUNTIME \
   -lidbfs.js \
-  -O3 \
   -sENVIRONMENT=web -sMODULARIZE")
   add_definitions(-D__NO_OPENGL)
 endif ()

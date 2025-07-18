@@ -323,7 +323,7 @@ void OptionsControlsState::lstControlsKeyPress(Action *action)
 			key != SDLK_RSHIFT && key != SDLK_RALT && key != SDLK_RCTRL)
 		{
 			*_selKey->asKey() = key;
-			std::string name = ucWords(SDL_GetKeyName(*_selKey->asKey()));
+			std::string name = tr(ucWords(SDL_GetKeyName(*_selKey->asKey())));
 			_lstControls->setCellText(_selected, 1, name);
 		}
 		_lstControls->setCellColor(_selected, 0, _colorNormal);
