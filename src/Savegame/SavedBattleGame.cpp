@@ -1799,6 +1799,9 @@ std::vector<Position> &SavedBattleGame::getStorageSpace()
  */
 void SavedBattleGame::randomizeItemLocations(Tile *t)
 {
+	// remove position of Tile t from the vector (because of potential endless loop)
+	Collections::removeIf(_storageSpace, [&](Position& p) { return p == t->getPosition(); });
+
 	if (!_storageSpace.empty())
 	{
 		for (auto iter = t->getInventory()->begin(); iter != t->getInventory()->end();)
@@ -2557,6 +2560,7 @@ void SavedBattleGame::reviveUnconsciousUnits(bool noTU)
 				if (placeUnitNearPosition(bu, originalPosition, largeUnit))
 				{
 					// recover from unconscious
+					bu->setNotificationShown(0);
 					bu->turn(false); // makes the unit stand up again
 					bu->kneel(false);
 					bu->setAlreadyExploded(false);

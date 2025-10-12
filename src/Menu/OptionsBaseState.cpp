@@ -233,9 +233,11 @@ void OptionsBaseState::btnOkClick(Action *)
 	recenter(dX, dY);
 	Options::save();
 	_game->loadLanguages();
-	SDL_SetWindowGrab(_game->getScreen()->getWindow(), (Options::captureMouse)?SDL_TRUE:SDL_FALSE); //Breaks stuff. Hard.
-	CrossPlatform::setSystemUI();
 	_game->getScreen()->resetDisplay();
+
+	SDL_bool captureMouse = Options::captureMouse? SDL_TRUE : SDL_FALSE;
+	SDL_SetWindowGrab(_game->getScreen()->getWindow(), captureMouse);
+
 	_game->setVolume(Options::soundVolume, Options::musicVolume, Options::uiVolume);
 	if (Options::reload && _origin == OPT_MENU)
 	{
