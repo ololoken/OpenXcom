@@ -1,5 +1,16 @@
 # OpenXcom [![Workflow Status][workflow-badge]][actions-url]
 
+It's fork aimed to add browser platform support. It uses Emscripten to build.
+
+```shell
+mkdir build && cd build && emcmake cmake ../ -DCMAKE_BUILD_TYPE=Release && emmake make
+```
+
+[Live demo](https://turch.in/oxce/index.html?lang=en)
+==
+
+![image](emscripten.jpeg)
+
 [workflow-badge]: https://github.com/OpenXcom/OpenXcom/workflows/ci/badge.svg
 [actions-url]: https://github.com/OpenXcom/OpenXcom/actions
 
