@@ -3122,17 +3122,35 @@ inline void BattlescapeState::handle(Action *action)
 				// "ctrl-s" - switch xcom unit speed to max and back
 				else if (key == SDLK_s && ctrlPressed)
 				{
-					if (Options::battleXcomSpeedOrig >= 1 && Options::battleXcomSpeedOrig <= 40)
+					if (_save->getSide() == FACTION_PLAYER)
 					{
-						Options::battleXcomSpeed = Options::battleXcomSpeedOrig;
-						Options::battleXcomSpeedOrig = -1;
-						warning("STR_QUICK_MODE_DEACTIVATED");
+						if (Options::battleXcomSpeedOrig >= 1 && Options::battleXcomSpeedOrig <= 40)
+						{
+							Options::battleXcomSpeed = Options::battleXcomSpeedOrig;
+							Options::battleXcomSpeedOrig = -1;
+							warning("STR_QUICK_MODE_DEACTIVATED");
+						}
+						else
+						{
+							Options::battleXcomSpeedOrig = Options::battleXcomSpeed;
+							Options::battleXcomSpeed = 1;
+							warningLongRaw(tr("STR_QUICK_MODE_ACTIVATED"));
+						}
 					}
 					else
 					{
-						Options::battleXcomSpeedOrig = Options::battleXcomSpeed;
-						Options::battleXcomSpeed = 1;
-						warningLongRaw(tr("STR_QUICK_MODE_ACTIVATED"));
+						if (Options::battleAlienSpeedOrig >= 1 && Options::battleAlienSpeedOrig <= 40)
+						{
+							Options::battleAlienSpeed = Options::battleAlienSpeedOrig;
+							Options::battleAlienSpeedOrig = -1;
+							warning("STR_QUICK_MODE_DEACTIVATED");
+						}
+						else
+						{
+							Options::battleAlienSpeedOrig = Options::battleAlienSpeed;
+							Options::battleAlienSpeed = 1;
+							warning("STR_QUICK_MODE_ACTIVATED");
+						}
 					}
 				}
 				// "ctrl-x" - mute/unmute unit response sounds
@@ -4305,6 +4323,12 @@ void BattlescapeState::resize(int &dX, int &dY)
 	}
 	switch (Options::battlescapeScale)
 	{
+	case SCALE_SCREEN_DIV_10:
+		divisor = 10;
+		break;
+	case SCALE_SCREEN_DIV_8:
+		divisor = 8;
+		break;
 	case SCALE_SCREEN_DIV_6:
 		divisor = 6;
 		break;

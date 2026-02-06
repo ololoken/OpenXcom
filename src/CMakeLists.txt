@@ -399,6 +399,7 @@ set ( ufopedia_src
   Ufopaedia/ArticleStateCraft.cpp
   Ufopaedia/ArticleStateCraftWeapon.cpp
   Ufopaedia/ArticleStateItem.cpp
+  Ufopaedia/ArticleStateSoldier.cpp
   Ufopaedia/ArticleStateText.cpp
   Ufopaedia/ArticleStateTextImage.cpp
   Ufopaedia/ArticleStateTFTD.cpp
@@ -410,6 +411,7 @@ set ( ufopedia_src
   Ufopaedia/ArticleStateTFTDUso.cpp
   Ufopaedia/ArticleStateTFTDVehicle.cpp
   Ufopaedia/ArticleStateUfo.cpp
+  Ufopaedia/ArticleStateUnit.cpp
   Ufopaedia/ArticleStateVehicle.cpp
   Ufopaedia/StatsForNerdsState.cpp
   Ufopaedia/Ufopaedia.cpp
@@ -639,14 +641,14 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
   --preload-file ${CMAKE_SOURCE_DIR}/timidity/@/etc/ \
   -sASYNCIFY -sASYNCIFY_STACK_SIZE=32768 \
   -sALLOW_MEMORY_GROWTH -sINITIAL_MEMORY=128mb \
-  -sEXPORT_ALL -sEXPORTED_RUNTIME_METHODS=callMain,addRunDependency,removeRunDependency \
+  -sEXPORTED_RUNTIME_METHODS=callMain,addRunDependency,removeRunDependency,FS,PATH,ENV \
   -sEXIT_RUNTIME \
   -lidbfs.js \
   -sENVIRONMENT=web -sMODULARIZE")
   add_definitions(-D__NO_OPENGL)
 endif ()
 
-target_link_libraries ( openxcom ${system_libs} ${PKG_DEPS_LDFLAGS} ${WIN32_LIBS} )
+target_link_libraries ( openxcom ${system_libs} ${PKG_DEPS_LDFLAGS} ${EXTRA_XCOM_LIBS} ${WIN32_LIBS} )
 
 # Pack libraries into bundle and link executable appropriately
 if ( APPLE AND CREATE_BUNDLE )

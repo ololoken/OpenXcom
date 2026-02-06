@@ -99,12 +99,6 @@
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
-
-// clang-format off
-EM_ASYNC_JS(void, do_sync_idbfs, (), {
-	await new Promise((resolve, reject) => FS.syncfs(err => err ? reject(err) : resolve()))
-});
-// clang-format on
 #endif
 
 namespace OpenXcom
@@ -765,7 +759,10 @@ bool deleteFile(const std::string &path)
 #else
 	bool res = (remove(path.c_str()) == 0);
 #ifdef __EMSCRIPTEN__
-	do_sync_idbfs();
+	EM_ASM( { Module.callbacks?.onFileWrite?.({
+		path: UTF8ToString($0),
+		op: 'delete'
+	}) }, path.c_str() );
 #endif
 	return res;
 #endif
@@ -1149,7 +1146,10 @@ bool writeFile(const std::string& filename, const std::string& data) {
 	}
 	SDL_RWclose(rwops);
 #ifdef __EMSCRIPTEN__
-	do_sync_idbfs();
+	EM_ASM( { Module.callbacks?.onFileWrite?.({
+		path: UTF8ToString($0),
+		op: 'write'
+	}) }, filename.c_str() );
 #endif
 	return true;
 }
@@ -1174,7 +1174,10 @@ bool writeFile(const std::string& filename, const std::vector<unsigned char>& da
 	}
 	SDL_RWclose(rwops);
 #ifdef __EMSCRIPTEN__
-	do_sync_idbfs();
+	EM_ASM( { Module.callbacks?.onFileWrite?.({
+		path: UTF8ToString($0),
+		op: 'write'
+	}) }, filename.c_str() );
 #endif
 	return true;
 }
@@ -1825,7 +1828,10 @@ static bool logToFile(const std::string& filename, const std::string& data) {
 		return rv == 1;
 	}
 #ifdef __EMSCRIPTEN__
-	do_sync_idbfs();
+	EM_ASM( { Module.callbacks?.onFileWrite?.({
+		path: UTF8ToString($0),
+		op: 'write'
+	}) }, filename.c_str() );
 #endif
 	return false;
 }
